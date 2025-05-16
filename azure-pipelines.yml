@@ -1,17 +1,19 @@
 trigger:
-- main
+- main  # o tu rama principal
 
 pool:
   vmImage: 'ubuntu-latest'
 
+variables:
+  imageName: 'python-app'
+
 steps:
-- task: UsePythonVersion@0
-  inputs:
-    versionSpec: '3.x'
-    addToPath: true
+- task: DockerInstaller@0
+  displayName: 'Instalar Docker'
 
 - script: |
-    python -m pip install --upgrade pip
-    pip install -r requirements.txt
-    python main.py
-  displayName: 'Run Python App'
+    echo "Construyendo la imagen Docker..."
+    docker build -t $(imageName):$(Build.BuildId) .
+  displayName: 'Construir imagen Docker'
+
+
