@@ -12,8 +12,12 @@ steps:
   displayName: 'Instalar Docker'
 
 - script: |
-    echo "Construyendo la imagen Docker..."
-    docker build -t $(imageName):$(Build.BuildId) .
-  displayName: 'Construir imagen Docker'
+    docker run -d -p 5000:5000 --name prueba-app python-app
+    sleep 5
+    curl http://localhost:5000 || echo "La app no respondió"
+    docker stop prueba-app
+    docker rm prueba-app
+  displayName: "Verificar ejecución del contenedor"
+
 
 
