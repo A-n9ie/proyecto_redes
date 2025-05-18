@@ -1,5 +1,5 @@
 trigger:
-- main  # o tu rama principal
+- main
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -12,12 +12,13 @@ steps:
   displayName: 'Instalar Docker'
 
 - script: |
-    docker run -d -p 5000:5000 --name prueba-app python-app
+    docker build -t $(imageName) .
+  displayName: 'Construir imagen Docker'
+
+- script: |
+    docker run -d -p 5000:5000 --name prueba-app $(imageName)
     sleep 5
     curl http://localhost:5000 || echo "La app no respondió"
     docker stop prueba-app
     docker rm prueba-app
-  displayName: "Verificar ejecución del contenedor"
-
-
-
+  displayName: 'Verificar ejecución del contenedor'
