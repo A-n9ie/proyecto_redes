@@ -34,4 +34,7 @@ steps:
 
       echo "Aplicando deployment..."
       kubectl apply -f deployment.yaml
+
+      echo "Reiniciando el deployment para forzar pull de nueva imagen..."
+      kubectl rollout restart deployment flask-app
   displayName: 'Build, Push y Deploy a AKS'
