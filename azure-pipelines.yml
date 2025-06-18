@@ -1,34 +1,40 @@
 trigger:
-  branches:
-    include:
-      - main
+- main
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: 'ubuntu-latest'
 
 variables:
-  imageName: flask-app
+  azureSubscription: 'ConexionAzurePipelines'
+  acrName: 'azureprojectflask'
+  acrLoginServer: 'azureprojectflask.azurecr.io'
+  imageName: 'fpython'
+  clusterName: 'fpython-cluster'
+  resourceGroup: 'redess'
 
 steps:
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '3.x'
+- task: DockerInstaller@0
+  displayName: 'Instalar Docker'
 
-  - script: |
-      echo "Construyendo imagen Docker..."
-      docker build -t $(imageName) .
-    displayName: 'Construir imagen Docker'
+- task: AzureCLI@2
+  inputs:
+    azureSubscription: $(azureSubscription)
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+      echo "Login a ACR..."
+      az acr login --name $(acrName)
 
-  - script: |
-      echo "Iniciando contenedor..."
-      docker run -d -p 5000:5000 --name flask-container $(imageName)
-      echo "Esperando que Flask se inicie..."
-      sleep 5
+      echo "Construyendo y subiendo imagen..."
+      docker build -t $(acrLoginServer)/$(imageName):latest .
+      docker push $(acrLoginServer)/$(imageName):latest
 
-      echo "Haciendo solicitud HTTP para verificar que el contenedor responde..."
-      curl --fail http://localhost:5000/
+      echo "Obteniendo credenciales de AKS..."
+      az aks get-credentials --name $(clusterName) --resource-group $(resourceGroup) --overwrite-existing
 
-      echo "Solicitud exitosa. Deteniendo contenedor..."
-      docker stop flask-container
-      docker rm flask-container
-    displayName: 'Probar contenedor Flask'
+      echo "Aplicando deployment..."
+      kubectl apply -f deployment.yaml
+
+      echo "Reiniciando el deployment para forzar pull de nueva imagen..."
+      kubectl rollout restart deployment flask-app
+  displayName: 'Build, Push y Deploy a AKS'
